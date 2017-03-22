@@ -68,7 +68,7 @@ Loading and preprocessing spectra
 Now we load these data, continue applying filters, and do some basic
 preprocessing. The additional filters are:
 
-* spectra that have no nonmasked pixels in the range [1270, 1290]
+* spectra that have no nonmasked pixels in the range [1310, 1325]
   Angstroms (QSO restframe) are filtered, as they cannot be normalized
 * spectra with fewer than 200 nonmasked pixels in the range [911,
   1217] Angstroms (QSO restframe) are filtered.
@@ -78,7 +78,7 @@ The preprocessing steps are to:
 * truncate spectra to only contain pixels in the range [911, 1217]
   Angstroms QSO rest
 * normalize flux and noise variance by dividing by the median flux in
-  the range [1270, 1290] Angstroms QSO rest
+  the range [1310, 1325] Angstroms QSO rest
 
 Relevant parameters in `set_paraemters` that can be tweaked if
 desired:
@@ -87,8 +87,8 @@ desired:
     min_num_pixels = 200;                         % minimum number of non-masked pixels
 
     % normalization parameters
-    normalization_min_lambda = 1270;              % range of rest wavelengths to use   A
-    normalization_max_lambda = 1290;              %   for flux normalization           A
+    normalization_min_lambda = 1310;              % range of rest wavelengths to use   A
+    normalization_max_lambda = 1325;              %   for flux normalization           A
 
     % file loading parameters
     loading_min_lambda = 910;                     % range of rest wavelengths to load  A

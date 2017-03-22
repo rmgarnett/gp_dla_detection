@@ -22,8 +22,8 @@ z_qso_cut      = 2.15;                        % filter out QSOs with z less than
 min_num_pixels = 200;                         % minimum number of non-masked pixels
 
 % normalization parameters
-normalization_min_lambda = 1270;              % range of rest wavelengths to use   A
-normalization_max_lambda = 1290;              %   for flux normalization           A
+normalization_min_lambda = 1310;              % range of rest wavelengths to use   A
+normalization_max_lambda = 1325;              %   for flux normalization           A
 
 % file loading parameters
 loading_min_lambda = 910;                     % range of rest wavelengths to load  A
