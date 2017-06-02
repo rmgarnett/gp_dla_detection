@@ -4,7 +4,7 @@
 % load training catalog
 catalog = load(sprintf('%s/catalog', processed_directory(training_release)));
 
-% generate quasirandom samples from p(normalized offset, log(N_HI))
+% generate quasirandom samples from p(normalized offset, log₁₀(N_HI))
 rng('default');
 sequence = scramble(haltonset(2), 'rr2');
 
@@ -14,20 +14,20 @@ offset_samples  = sequence(1:num_dla_samples, 1)';
 
 % we must transform the second dimension to have the correct marginal
 % distribution for our chosen prior over column density, which is a
-% mixture of a uniform distribution on log_10 N_HI in [20, 23] and a
-% distribution we fit to observed data
+% mixture of a uniform distribution on log₁₀ N_HI and a distribution
+% we fit to observed data
 
 % uniform component of column density prior
 u = makedist('uniform', ...
              'lower', uniform_min_log_nhi, ...
              'upper', uniform_max_log_nhi);
 
-% extract observed log_10 N_HI samples from catalog
+% extract observed log₁₀ N_HI samples from catalog
 all_log_nhis = catalog.log_nhis(dla_catalog_name);
 ind = cellfun(@(x) (~isempty(x)), all_log_nhis);
 log_nhis = cat(1, all_log_nhis{ind});
 
-% make a quadratic fit to the estimated log p(log_10 N_HI) over the
+% make a quadratic fit to the estimated log p(log₁₀ N_HI) over the
 % specified range
 x = linspace(fit_min_log_nhi, fit_max_log_nhi, 1e3);
 kde_pdf = ksdensity(log_nhis, x);
