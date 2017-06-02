@@ -19,16 +19,16 @@
 
 /* physical constants */
 
-const double c   = 2.99792458e+10;               /* speed of light          cm s^-1       */
-const double k   = 1.38064852e-16;               /* boltzmann constant      erg K^-1      */
-const double m_p = 1.672621898e-24;              /* proton mass             g             */
-const double m_e = 9.10938356e-28;               /* electron mass           g             */
+static const double c   = 2.99792458e+10;              /* speed of light          cm s⁻¹        */
+/* static const double k   = 1.38064852e-16; */        /* Boltzmann constant      erg K⁻¹       */
+/* static const double m_p = 1.672621898e-24;*/        /* proton mass             g             */
+/* static const double m_e = 9.10938356e-28; */        /* electron mass           g             */
 /* e = 1.6021766208e-19 * c / 10; */
-const double e   = 4.803204672997660e-10;        /* elementary charge       statC         */
+/* static const double e   = 4.803204672997660e-10; */ /* elementary charge       statC         */
 
 /* Lyman series */
 
-const double transition_wavelengths[] =          /* transition wavelengths  cm            */
+static const double transition_wavelengths[] =         /* transition wavelengths  cm            */
   {
     1.2156701e-05,
     1.0257223e-05,
@@ -63,7 +63,7 @@ const double transition_wavelengths[] =          /* transition wavelengths  cm  
     9.12645e-06
   };
 
-const double oscillator_strengths[] =            /* oscillator strengths    dimensionless */
+static const double oscillator_strengths[] =           /* oscillator strengths    dimensionless */
   {
     0.416400,
     0.079120,
@@ -98,7 +98,7 @@ const double oscillator_strengths[] =            /* oscillator strengths    dime
     0.000048
   };
 
-const double Gammas[] =                          /* transition rates        s^-1          */
+static const double Gammas[] =                         /* transition rates        s^-1          */
   {
     6.265e+08,
     1.897e+08,
@@ -134,20 +134,21 @@ const double Gammas[] =                          /* transition rates        s^-1
   };
 
 /* assumed constant */
-
-const double T = 1e+04;                          /* gas temperature         K             */
+/* static const double T = 1e+04; */                   /* gas temperature         K             */
 
 /* derived constants */
 
 /* b = sqrt(2 * k * T / m_p); */
-const double b     = 1.28486551932562422e+06;    /* Doppler parameter       cm s^-1       */
+/* static const double b =
+     1.28486551932562422e+06; */                       /* Doppler parameter       cm s⁻¹        */
+
 /* sigma = b / M_SQRT2; */
-const double sigma = 9.08537121627923800e+05;    /* Gaussian width          cm s^-1       */
+static const double sigma = 9.08537121627923800e+05;   /* Gaussian width          cm s⁻¹        */
 
 /* leading_constants[i] =
        M_PI * e * e * oscillator_strengths[i] * transition_wavelengths[i] / (m_e * c);
 */
-const double leading_constants[] =               /* leading constants       cm^2          */
+static const double leading_constants[] =              /* leading constants       cm²           */
   {
     1.34347262962625339e-07,
     2.15386482180851912e-08,
@@ -183,7 +184,7 @@ const double leading_constants[] =               /* leading constants       cm^2
   };
 
 /* gammas[i] = Gammas[i] * transition_wavelengths[i] / (4 * M_PI); */
-const double gammas[] =                          /* Lorentzian widths       cm s^-1       */
+static const double gammas[] =                         /* Lorentzian widths       cm s⁻¹        */
   {
     6.06075804241938613e+02,
     1.54841462408931704e+02,
@@ -218,31 +219,66 @@ const double gammas[] =                          /* Lorentzian widths       cm s
     9.27433783998286437e-02
   };
 
+/* BOSS spectrograph instrumental broadening */
+/* R = 2000; */                                  /* resolving power          dimensionless */
+
+/* width of instrument broadening in pixels */
+/* pixel_spacing = 1e-4; */
+/* pixel_sigma = 1 / (R * 2 * sqrt(2 * M_LN2) * (pow(10, pixel_spacing) - 1)); */
+
+static const int width = 3;                      /* width of convolution     dimensionless */
+
+/*
+  total = 0;
+  for (i = -width, j = 0; i <= width; i++, j++) {
+    instrument_profile[j] = exp(-0.5 * i * i / (pixel_sigma * pixel_sigma));
+    total += instrument_profile[j];
+  }
+
+  for (i = 0; i < 2 * width + 1; i++)
+    instrument_profile[i] /= total;
+*/
+
+static const double instrument_profile[] =
+  {
+    2.17460992138080811e-03,
+    4.11623059580451742e-02,
+    2.40309364651846963e-01,
+    4.32707438937454059e-01, /* center pixel */
+    2.40309364651846963e-01,
+    4.11623059580451742e-02,
+    2.17460992138080811e-03
+  };
+
 void mexFunction(int nlhs,       mxArray *plhs[],
 		 int nrhs, const mxArray *prhs[]) {
 
-  double *lambdas, *profile, *multipliers;
+  double *lambdas, *profile, *multipliers, *raw_profile;
   double z, N, velocity, total;
-  int num_lines, i, j;
+  int num_lines, i, j, k;
   mwSize num_points;
 
   /* get input */
-  lambdas = mxGetPr(LAMBDAS_ARG);                /* wavelengths             A             */
+  lambdas = mxGetPr(LAMBDAS_ARG);                /* wavelengths             Å             */
   z       = mxGetScalar(Z_ARG);                  /* redshift                dimensionless */
-  N       = mxGetScalar(N_ARG);                  /* column density          cm^-2         */
+  N       = mxGetScalar(N_ARG);                  /* column density          cm⁻²          */
 
   num_lines = (nrhs > 3) ? (int)(mxGetScalar(NUM_LINES_ARG)) : NUM_LINES;
 
+  num_points = mxGetNumberOfElements(LAMBDAS_ARG);
+
   /* initialize output */
-  PROFILE_ARG = mxCreateDoubleMatrix(mxGetM(LAMBDAS_ARG), mxGetN(LAMBDAS_ARG), mxREAL);
+  PROFILE_ARG = mxCreateDoubleMatrix(num_points - 2 * width, 1, mxREAL);
   profile = mxGetPr(PROFILE_ARG);                /* absorption profile      dimensionless */
 
-  num_points = mxGetM(LAMBDAS_ARG) * mxGetN(LAMBDAS_ARG);
+  /* to hold the profile before instrumental broadening */
+  raw_profile = mxMalloc(num_points * sizeof(double));
 
   multipliers = mxMalloc(num_lines * sizeof(double));
   for (i = 0; i < num_lines; i++)
     multipliers[i] = c / (transition_wavelengths[i] * (1 + z)) / 1e8;
 
+  /* compute raw Voigt profile */
   for (i = 0; i < num_points; i++) {
     /* apply each absorption line */
     total = 0;
@@ -252,9 +288,17 @@ void mexFunction(int nlhs,       mxArray *plhs[],
       total += -leading_constants[j] * voigt(velocity, sigma, gammas[j]);
     }
 
-    profile[i] = exp(N * total);
+    raw_profile[i] = exp(N * total);
   }
 
+  num_points = mxGetNumberOfElements(PROFILE_ARG);
+
+  /* instrumental broadening */
+  for (i = 0; i < num_points; i++)
+    for (j = i, k = 0; j <= i + 2 * width; j++, k++)
+      profile[i] += raw_profile[j] * instrument_profile[k];
+
+  mxFree(raw_profile);
   mxFree(multipliers);
 
 }
