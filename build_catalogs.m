@@ -109,11 +109,11 @@ for i = 1:num_quasars
 
   % for 5.7.2 plates, simply print greedily print both 5.7.0 and 5.7.2 paths
   if (v_5_7_2_ind(i))
-    fprintf(fid, 'v5_7_2/spectra/lite/%i/spec-%i-%i-%04i.fits\n', ...
+    fprintf(fid, 'v5_7_2/spectra/lite/./%i/spec-%i-%i-%04i.fits\n', ...
             plates(i), plates(i), mjds(i), fiber_ids(i));
   end
 
-  fprintf(fid, 'v5_7_0/spectra/lite/%i/spec-%i-%i-%04i.fits\n', ...
+  fprintf(fid, 'v5_7_0/spectra/lite/./%i/spec-%i-%i-%04i.fits\n', ...
           plates(i), plates(i), mjds(i), fiber_ids(i));
 end
 fclose(fid);
