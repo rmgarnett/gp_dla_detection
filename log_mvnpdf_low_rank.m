@@ -12,7 +12,7 @@ function log_p = log_mvnpdf_low_rank(y, mu, M, d)
 
   d_inv = 1 ./ d;
   D_inv_y = d_inv .* y;
-  D_inv_M = bsxfun(@times, d_inv, M);
+  D_inv_M = d_inv .* M;
 
   % use Woodbury identity, define
   %   B = (I + M' D^-1 M),
