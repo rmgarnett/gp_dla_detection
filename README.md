@@ -51,7 +51,7 @@ the `data/dr12q/spectra` directory containing relative paths to
 yet-unfiltered SDSS spectra for download. The `file_list` output is
 available in this repository in the same location. The next step is to
 download the coadded "speclite" SDSS spectra for these observations
-(warning: total download is 34 GB). The `download_spectra.sh` script
+(warning: total download is 35 GB). The `download_spectra.sh` script
 requires `wget` to be available. On OS X systems, this may be
 installed easily with [Homebrew](http://brew.sh/index.html).
 
@@ -87,12 +87,12 @@ desired:
     min_num_pixels = 200;                         % minimum number of non-masked pixels
 
     % normalization parameters
-    normalization_min_lambda = 1310;              % range of rest wavelengths to use   A
-    normalization_max_lambda = 1325;              %   for flux normalization           A
+	normalization_min_lambda = 1310;              % range of rest wavelengths to use   Å
+	normalization_max_lambda = 1325;              %   for flux normalization
 
     % file loading parameters
-    loading_min_lambda = 910;                     % range of rest wavelengths to load  A
-    loading_max_lambda = 1217;                    %                                    A
+	loading_min_lambda = 910;                     % range of rest wavelengths to load  Å
+	loading_max_lambda = 1217;
 
 When ready, the MATLAB code to preload the spectra is:
 
@@ -146,15 +146,17 @@ Relevant parameters in `set_parameters` that can be tweaked if
 desired:
 
     % null model parameters
-    min_lambda         =  911.75;                 % range of rest wavelengths to       A
+    min_lambda         =  911.75;                 % range of rest wavelengths to       Å
     max_lambda         = 1215.75;                 %   model
-    dlambda            =    0.25;                 % separation of wavelength grid      A
+    dlambda            =    0.25;                 % separation of wavelength grid      Å
     k                  = 20;                      % rank of non-diagonal contribution
     max_noise_variance = 1^2;                     % maximum pixel noise allowed during model training
 
-    % BFGS parameters
-    minFunc_options =               ...           % optimization options for model fitting
-        struct('MaxIter',     2000, ...
+    % optimization parameters
+	initial_c     = 0.1;                          % initial guess for c
+	initial_tau_0 = 0.0023;                       % initial guess for τ₀
+	initial_beta  = 3.65;                         % initial guess for β
+	minFunc_options =               ...           % optimization options for model fittin        struct('MaxIter',     2000, ...
                'MaxFunEvals', 4000);
 
 When ready, the MATLAB code to learn the null quasar emission model
@@ -173,12 +175,12 @@ Relevant parameters in `set_parameters` that can be tweaked if
 desired:
 
     % DLA model parameters: parameter samples
-    num_dla_samples     = 10000;                  % number of parameter samples
-    alpha               = 0.9;                    % weight of KDE component in mixture
-    uniform_min_log_nhi = 20.0;                   % range of column density samples    [cm^-2]
-    uniform_max_log_nhi = 23.0;                   % from uniform distribution
-    fit_min_log_nhi     = 20.0;                   % range of column density samples    [cm^-2]
-    fit_max_log_nhi     = 22.0;                   % from fit to log PDF
+	num_dla_samples     = 10000;                  % number of parameter samples
+	alpha               = 0.9;                    % weight of KDE component in mixture
+	uniform_min_log_nhi = 20.0;                   % range of column density samples    [cm⁻²]
+	uniform_max_log_nhi = 23.0;                   % from uniform distribution
+	fit_min_log_nhi     = 20.0;                   % range of column density samples    [cm⁻²]
+	fit_max_log_nhi     = 22.0;                   % from fit to log PDF
 
 When ready, the MATLAB code to generate the DLA model parameter
 samples is:
@@ -244,18 +246,24 @@ desired, including function handles specifying the range of z_DLA to
 search:
 
     % model prior parameters
-    prior_z_qso_increase = kms_to_z(30000);       % use QSOs with z < (z_QSO + x) for prior
+	prior_z_qso_increase = kms_to_z(30000);       % use QSOs with z < (z_QSO + x) for prior
 
-    % DLA model parameters: absorber range and model
-    num_lines = 3;                                % number of members of the Lyman series to use
-    max_z_cut = kms_to_z(3000);                   % max z_DLA = z_QSO - max_z_cut
-    max_z_dla = @(wavelengths, z_qso) ...         % determines maximum z_DLA to search
-        (max(wavelengths) / lya_wavelength - 1) - max_z_cut;
-    min_z_cut = kms_to_z(3000);                   % min z_DLA = z_Lyoo + min_z_cut
-    min_z_dla = @(wavelengths, z_qso) ...         % determines minimum z_DLA to search
-        max(min(wavelengths) / lya_wavelength - 1,                          ...
-            observed_wavelengths(lyman_limit, z_qso) / lya_wavelength - 1 + ...
-            min_z_cut);
+	% instrumental broadening parameters
+	width = 3;                                    % width of Gaussian broadening (# pixels)
+	pixel_spacing = 1e-4;                         % wavelength spacing of pixels in dex
+
+	% DLA model parameters: absorber range and model
+	num_lines = 3;                                % number of members of the Lyman series to use
+
+	max_z_cut = kms_to_z(3000);                   % max z_DLA = z_QSO - max_z_cut
+	max_z_dla = @(wavelengths, z_qso) ...         % determines maximum z_DLA to search
+	    (max(wavelengths) / lya_wavelength - 1) - max_z_cut;
+
+	min_z_cut = kms_to_z(3000);                   % min z_DLA = z_Ly∞ + min_z_cut
+	min_z_dla = @(wavelengths, z_qso) ...         % determines minimum z_DLA to search
+    max(min(wavelengths) / lya_wavelength - 1,                          ...
+        observed_wavelengths(lyman_limit, z_qso) / lya_wavelength - 1 + ...
+        min_z_cut);
 
 When ready, the selected spectra can be processed with `process_qsos`.
 This script will write the results in
@@ -272,10 +280,10 @@ The complete code for processing the spectra in MATLAB is:
 
     % specify the spectra to use for computing the DLA existence prior
     dla_catalog_name  = 'dr9q_concordance';
-    prior_ind = ...
-        [' prior_catalog.in_dr9 & ' ...
-         ' prior_catalog.los_inds(dla_catalog_name) & ' ...
-         '(prior_catalog.filter_flags == 0)'];
+	prior_ind = ...
+        [' prior_catalog.in_dr9 & '             ...
+         '(prior_catalog.filter_flags == 0) & ' ...
+         ' prior_catalog.los_inds(dla_catalog_name)'];
 
     % specify the spectra to process
     release = 'dr12q';
