@@ -26,7 +26,7 @@ coordinates, etc., and apply some basic filtering to the spectra:
 * spectra identified in a visual survey to have broad absorption line
   (BAL) features are filtered
 
-Relevant parameters in `set_paraemters` that can be tweaked if desired:
+Relevant parameters in `set_parameters` that can be tweaked if desired:
 
     % preprocessing parameters
     z_qso_cut      = 2.15;                        % filter out QSOs with z less than this threshold
@@ -80,7 +80,7 @@ The preprocessing steps are to:
 * normalize flux and noise variance by dividing by the median flux in
   the range [1310, 1325] Angstroms QSO rest
 
-Relevant parameters in `set_paraemters` that can be tweaked if
+Relevant parameters in `set_parameters` that can be tweaked if
 desired:
 
     % preprocessing parameters
