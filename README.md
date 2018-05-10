@@ -133,6 +133,7 @@ nominally DLA-free. Here we select all spectra:
 These particular choices may be accomplished with:
 
     training_release  = 'dr12q';
+    dla_catalog_name = 'dr9q_concordance';
     train_ind = ...
         [' catalog.in_dr9                     & ' ...
          '(catalog.filter_flags == 0)         & ' ...
@@ -141,6 +142,16 @@ These particular choices may be accomplished with:
 
 After specifying the spectra to use in `training_release` and
 `train_ind`, we call `learn_qso_model` to learn the model.
+To learn the model, you need the matlab toolbox minFunc from:
+
+`https://www.cs.ubc.ca/~schmidtm/Software/minFunc.html`
+
+You should cd to the directory where you extracted this to and run:
+
+    addpath(genpath(pwd));
+    mexAll;
+
+to initialise the addon the first time you use it.
 
 Relevant parameters in `set_parameters` that can be tweaked if
 desired:
@@ -186,7 +197,6 @@ When ready, the MATLAB code to generate the DLA model parameter
 samples is:
 
     training_release  = 'dr12q';
-    dla_catalog_name  = 'dr9q_concordance';
     generate_dla_samples;
 
 Processing spectra for DLA detection
