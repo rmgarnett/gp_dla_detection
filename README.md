@@ -37,14 +37,14 @@ and MATLAB.
 First we download the raw catalog data:
 
     # in shell
-	cd data/scripts
-	./download_catalogs.sh
+    cd data/scripts
+    ./download_catalogs.sh
 
 Then we load these catalogs into MATLAB:
 
-	% in MATLAB
+    % in MATLAB
     set_parameters;
-	build_catalogs;
+    build_catalogs;
 
 The `build_catalogs` script will produce a file called `file_list` in
 the `data/dr12q/spectra` directory containing relative paths to
@@ -55,9 +55,9 @@ download the coadded "speclite" SDSS spectra for these observations
 requires `wget` to be available. On OS X systems, this may be
 installed easily with [Homebrew](http://brew.sh/index.html).
 
-	# in shell
-	cd data/scripts
-	./download_spectra.sh
+    # in shell
+    cd data/scripts
+    ./download_spectra.sh
 
 `download_spectra.sh` will download the observational data for the yet
 unfiltered lines of sight to the `data/dr12q/spectra` directory.
@@ -87,27 +87,27 @@ desired:
     min_num_pixels = 200;                         % minimum number of non-masked pixels
 
     % normalization parameters
-	normalization_min_lambda = 1310;              % range of rest wavelengths to use   Å
-	normalization_max_lambda = 1325;              %   for flux normalization
+    normalization_min_lambda = 1310;              % range of rest wavelengths to use   Å
+    normalization_max_lambda = 1325;              %   for flux normalization
 
     % file loading parameters
-	loading_min_lambda = 910;                     % range of rest wavelengths to load  Å
-	loading_max_lambda = 1217;
+    loading_min_lambda = 910;                     % range of rest wavelengths to load  Å
+    loading_max_lambda = 1217;
 
 When ready, the MATLAB code to preload the spectra is:
 
     set_parameters;
-	release = 'dr12q';
+    release = 'dr12q';
 
-	file_loader = @(plate, mjd, fiber_id) ...
-    (read_spec(sprintf('%s/%i/spec-%i-%i-%04i.fits', ...
+    file_loader = @(plate, mjd, fiber_id) ...
+      (read_spec(sprintf('%s/%i/spec-%i-%i-%04i.fits', ...
         spectra_directory(release),                  ...
         plate,                                       ...
         plate,                                       ...
         mjd,                                         ...
         fiber_id)));
 
-	preload_qsos;
+    preload_qsos;
 
 The result will be a completed catalog data file,
 `data/[release]/processed/catalog.mat`, with complete filtering
@@ -142,16 +142,16 @@ These particular choices may be accomplished with:
 
 After specifying the spectra to use in `training_release` and
 `train_ind`, we call `learn_qso_model` to learn the model.
-To learn the model, you need the matlab toolbox minFunc from:
+To learn the model, you will need the MATLAB toolbox
+[minFunc](https://www.cs.ubc.ca/~schmidtm/Software/minFunc.html)
+available from Mark Schmidt.
 
-`https://www.cs.ubc.ca/~schmidtm/Software/minFunc.html`
-
-You should cd to the directory where you extracted this to and run:
+You should cd to the directory where you installed minFunc to and run:
 
     addpath(genpath(pwd));
     mexAll;
 
-to initialise the addon the first time you use it.
+to initialize minFunc before the first time you use it.
 
 Relevant parameters in `set_parameters` that can be tweaked if
 desired:
@@ -164,10 +164,11 @@ desired:
     max_noise_variance = 1^2;                     % maximum pixel noise allowed during model training
 
     % optimization parameters
-	initial_c     = 0.1;                          % initial guess for c
-	initial_tau_0 = 0.0023;                       % initial guess for τ₀
-	initial_beta  = 3.65;                         % initial guess for β
-	minFunc_options =               ...           % optimization options for model fittin        struct('MaxIter',     2000, ...
+    initial_c     = 0.1;                          % initial guess for c
+    initial_tau_0 = 0.0023;                       % initial guess for τ₀
+    initial_beta  = 3.65;                         % initial guess for β
+    minFunc_options =               ...           % optimization options for model fitting
+        struct('MaxIter',     2000, ...
                'MaxFunEvals', 4000);
 
 When ready, the MATLAB code to learn the null quasar emission model
@@ -186,12 +187,12 @@ Relevant parameters in `set_parameters` that can be tweaked if
 desired:
 
     % DLA model parameters: parameter samples
-	num_dla_samples     = 10000;                  % number of parameter samples
-	alpha               = 0.9;                    % weight of KDE component in mixture
-	uniform_min_log_nhi = 20.0;                   % range of column density samples    [cm⁻²]
-	uniform_max_log_nhi = 23.0;                   % from uniform distribution
-	fit_min_log_nhi     = 20.0;                   % range of column density samples    [cm⁻²]
-	fit_max_log_nhi     = 22.0;                   % from fit to log PDF
+    num_dla_samples     = 10000;                  % number of parameter samples
+    alpha               = 0.9;                    % weight of KDE component in mixture
+    uniform_min_log_nhi = 20.0;                   % range of column density samples    [cm⁻²]
+    uniform_max_log_nhi = 23.0;                   % from uniform distribution
+    fit_min_log_nhi     = 20.0;                   % range of column density samples    [cm⁻²]
+    fit_max_log_nhi     = 22.0;                   % from fit to log PDF
 
 When ready, the MATLAB code to generate the DLA model parameter
 samples is:
@@ -214,13 +215,13 @@ from [Homebrew-science](https://github.com/Homebrew/homebrew-science)
 for OS X users. The code for this is:
 
     % in MATLAB
-	mex voigt.c -lcerf
+    mex voigt.c -lcerf
 
 To perform a DLA search, we must specify a few things first. First, we
 must specify which quasar emission model to use; to select the one
 learned above, we may use
 
-	% specify the learned quasar model to use
+    % specify the learned quasar model to use
     training_release  = 'dr12q';
     training_set_name = 'dr9q_minus_concordance';
 
@@ -256,21 +257,21 @@ desired, including function handles specifying the range of z_DLA to
 search:
 
     % model prior parameters
-	prior_z_qso_increase = kms_to_z(30000);       % use QSOs with z < (z_QSO + x) for prior
+    prior_z_qso_increase = kms_to_z(30000);       % use QSOs with z < (z_QSO + x) for prior
 
-	% instrumental broadening parameters
-	width = 3;                                    % width of Gaussian broadening (# pixels)
-	pixel_spacing = 1e-4;                         % wavelength spacing of pixels in dex
+    % instrumental broadening parameters
+    width = 3;                                    % width of Gaussian broadening (# pixels)
+    pixel_spacing = 1e-4;                         % wavelength spacing of pixels in dex
 
-	% DLA model parameters: absorber range and model
-	num_lines = 3;                                % number of members of the Lyman series to use
+    % DLA model parameters: absorber range and model
+    num_lines = 3;                                % number of members of the Lyman series to use
 
-	max_z_cut = kms_to_z(3000);                   % max z_DLA = z_QSO - max_z_cut
-	max_z_dla = @(wavelengths, z_qso) ...         % determines maximum z_DLA to search
-	    (max(wavelengths) / lya_wavelength - 1) - max_z_cut;
+    max_z_cut = kms_to_z(3000);                   % max z_DLA = z_QSO - max_z_cut
+    max_z_dla = @(wavelengths, z_qso) ...         % determines maximum z_DLA to search
+        (max(wavelengths) / lya_wavelength - 1) - max_z_cut;
 
-	min_z_cut = kms_to_z(3000);                   % min z_DLA = z_Ly∞ + min_z_cut
-	min_z_dla = @(wavelengths, z_qso) ...         % determines minimum z_DLA to search
+    min_z_cut = kms_to_z(3000);                   % min z_DLA = z_Ly∞ + min_z_cut
+    min_z_dla = @(wavelengths, z_qso) ...         % determines minimum z_DLA to search
     max(min(wavelengths) / lya_wavelength - 1,                          ...
         observed_wavelengths(lyman_limit, z_qso) / lya_wavelength - 1 + ...
         min_z_cut);
@@ -284,7 +285,7 @@ The complete code for processing the spectra in MATLAB is:
     % produce catalog searching [Lyoo + 3000 km/s, Lya - 3000 km/s]
     set_parameters;
 
-	% specify the learned quasar model to use
+    % specify the learned quasar model to use
     training_release  = 'dr12q';
     training_set_name = 'dr9q_minus_concordance';
 
@@ -300,7 +301,7 @@ The complete code for processing the spectra in MATLAB is:
     test_set_name = 'dr12q';
     test_ind = '(catalog.filter_flags == 0)';
 
-	% process the spectra
+    % process the spectra
     process_qsos;
 
 Finally, we may create an ASCII catalog of the results if desired with
