@@ -73,7 +73,7 @@ min_z_dla = @(wavelengths, z_qso) ...         % determines minimum z_DLA to sear
         min_z_cut);
 
 % base directory for all data
-base_directory = '~/work/gdd/data';
+base_directory = 'data';
 
 % utility functions for identifying various directories
 distfiles_directory = @(release) ...
