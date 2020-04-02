@@ -2,6 +2,7 @@
 import numpy as np
 import glob
 import re
+import os
 
 def format_latex_num(number, prec=3, trans = -3):
     """Return a strong formatting a number as, eg 3.1 x 10^4"""
@@ -99,3 +100,20 @@ def print_all_tables():
     ctxts = glob.glob("DR12/cddf_*.txt")
     for ctxt in ctxts:
         print(load_cddf_table(ctxt,caption="CDDF"))
+
+def print_all_multi_dlas_tables(path):
+    '''
+    print all the tables in the multi-DLA paper:
+    - dN/dX table
+    - OmegaDLA table
+    - CDDF tables : including 1) all; 2) table for different redshifts
+    '''
+    print(load_table(os.path.join(path, "dndx_all.txt"), colheaders=('$z$', 'dN/dX'), caption="Table of dN/dX values"))
+    print(load_table(os.path.join(
+        path, "omega_dla_all.txt"), colheaders=('$z$', '$\Omega_\mathrm{DLA} (10^{-3}) $'), caption="$\Omega_\mathrm{DLA}$ values", omega=True))
+
+    fNstr = "$f(N_\mathrm{HI})$ "
+    ctxts = glob.glob(os.path.join(path, 'cddf_*.txt'))
+
+    for ctxt in ctxts:
+        print(load_cddf_table(ctxt, caption="CDDF"))
