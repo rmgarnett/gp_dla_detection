@@ -193,10 +193,15 @@ for quasar_ind = 1:num_quasars
   this_num_quasars = nnz(less_ind);
   this_p_dlas      = (this_num_dlas / this_num_quasars).^(1:max_dlas);
 
-  for i = 1:max_dlas
-    this_p_dlas(i) = this_p_dlas(i) - sum(this_p_dlas((i + 1):end));
-    log_priors_dla(quasar_ind, i) = log(this_p_dlas(i));
+  % the prior for having exactly k DLAs is (M / N)^k - (M / N)^(k + 1) 
+  for i = 1:(max_dlas - 1)
+    this_p_dlas(i) = this_p_dlas(i) - this_p_dlas(i + 1);
   end
+  % make sure the sum of multi-DLA priors is equal to M / N, which is
+  % the prior for at least one DLA.
+  assert( abs(sum(this_p_dlas) - (this_num_dlas / this_num_quasars) ) < 1e-4 )
+
+  log_priors_dla(quasar_ind, :) = log(this_p_dlas);
 
   % lls priors : assume extrapolated log_nhi prior for lls
   % lls prior = M / N * Z_lls / Z_dla
