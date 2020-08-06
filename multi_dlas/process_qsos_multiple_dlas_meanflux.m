@@ -158,14 +158,14 @@ for quasar_ind = 1:num_quasars
   % convert to QSO rest frame
   this_rest_wavelengths = emitted_wavelengths(this_wavelengths, z_qso);
 
-  ind = (this_rest_wavelengths >= min_lambda) & ...
-        (this_rest_wavelengths <= max_lambda);
+  unmasked_ind = (this_rest_wavelengths >= min_lambda) & ...
+                 (this_rest_wavelengths <= max_lambda);
 
   % keep complete copy of equally spaced wavelengths for absorption
   % computation
-  this_unmasked_wavelengths = this_wavelengths(ind);
+  this_unmasked_wavelengths = this_wavelengths(unmasked_ind);
 
-  ind = ind & (~this_pixel_mask);
+  ind = unmasked_ind & (~this_pixel_mask);
 
   this_wavelengths      =      this_wavelengths(ind);
   this_rest_wavelengths = this_rest_wavelengths(ind);
@@ -330,7 +330,9 @@ for quasar_ind = 1:num_quasars
       ];
 
   % to retain only unmasked pixels from computed absorption profile
-  mask_ind = (~this_pixel_mask(ind));
+  % this has to be done by using the unmasked_ind which has not yet
+  % been applied this_pixel_mask.
+  mask_ind = (~this_pixel_mask(unmasked_ind));
 
   for num_dlas = 1:max_dlas
     % compute probabilities under DLA model for each of the sampled
