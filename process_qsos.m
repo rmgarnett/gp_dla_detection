@@ -103,7 +103,8 @@ for quasar_ind = 1:num_quasars
 
   unmasked_ind = (this_rest_wavelengths >= min_lambda) & ...
         (this_rest_wavelengths <= max_lambda);
-
+  unmasked_ind = (this_rest_wavelengths >= min_lambda) & ...
+                 (this_rest_wavelengths <= max_lambda);
   % keep complete copy of equally spaced wavelengths for absorption
   % computation
   this_unmasked_wavelengths = this_wavelengths(unmasked_ind);
