@@ -1652,7 +1652,7 @@ class QSOLoader(object):
         return self.GP.rest_wavelengths, this_mu
 
     def plot_this_mu(self, nspec, suppressed=True, num_voigt_lines=3, num_forest_lines=31, Parks=False, dla_parks=None, 
-        label="", new_fig=True, color="red"):
+        label="", new_fig=True, color="red", num_dlas=None, **kwargs):
         '''
         Plot the spectrum with the dla model
 
@@ -1664,6 +1664,8 @@ class QSOLoader(object):
         number_forest_lines (int) : how many members of Lymans series considered in the froest
         Parks (bool) : whether to plot Parks' results
         dla_parks (str) : if Parks=True, specify the path to Parks' `prediction_DR12.json`
+        num_dlas (int) : number of DLAs you want to plot on the figure, should not exceed
+            the max_dlas modelled in by the code. if None, use the model with maximum posterior.
 
         Returns:
         ----
@@ -1679,35 +1681,47 @@ class QSOLoader(object):
         this_wavelengths = self.find_this_wavelengths(nspec)
         this_flux        = self.find_this_flux(nspec)
 
+        # convert back to the rest-frame
         this_rest_wavelengths = emitted_wavelengths(this_wavelengths, self.z_qsos[nspec])
 
         # for building GP model
         rest_wavelengths = self.GP.rest_wavelengths
         this_mu = self.GP.mu
 
-        # count the effective optical depth from members in Lyman series
+        # [suppressed] count the effective optical depth from members in Lyman series
         scale_factor = self.total_scale_factor(
             self.GP.tau_0_kim, self.GP.beta_kim, self.z_qsos[nspec], self.GP.rest_wavelengths, num_lines=num_forest_lines)
         if suppressed:
             this_mu = this_mu * scale_factor
 
-        # get the MAP DLA values
-        nth = np.argmax( self.model_posteriors[nspec] ) - 1 - self.sub_dla
+        # [DLA] get the MAP DLA values, plot with Voigt profiles
+        if num_dlas != None:
+            # [DLA] num_dlas should not exceed the max DLAs modelled in the code
+            assert 0 <= num_dlas <= (self.model_posteriors.shape[1] - 1 - self.sub_dla)
+            nth = num_dlas - 1
+        else:
+            nth = np.argmax( self.model_posteriors[nspec] ) - 1 - self.sub_dla
+
+        # [DLA] if num_dlas >= 1 (nth >= 0), plot num_dlas with their MAP values
+        # in the figure
         if nth >= 0:
+            # determine if we are using Ho (2020) catalogue or Garnett (2017) catalogue
             if self.model_posteriors.shape[1] > 2:
-                map_z_dlas    = self.all_z_dlas[nspec, :(nth + 1)]
-                map_log_nhis  = self.all_log_nhis[nspec, :(nth + 1)]
-            elif self.model_posteriors.shape[1] == 2: # Garnett (2017) model
+                map_z_dlas = self.map_z_dlas[nspec, nth, :(nth + 1)]
+                map_log_nhis = self.map_log_nhis[nspec, nth, :(nth + 1)]
+            elif self.model_posteriors.shape[1] == 2:
+                # Garnett (2017) model did not have MAPs in the catalogue
+                # we need to get the MAPs from the QMC sample file
                 self.prepare_roam_map_vals_per_spec(nspec, self.sample_file)
                 
                 map_z_dlas    = np.array([ self.all_z_dlas[nspec] ])
                 map_log_nhis  = np.array([ self.all_log_nhis[nspec] ])
                 assert ~np.isnan(map_z_dlas)
 
+            # [DLA] get the multi-DLA voigt profile multiplying onto the model
             for map_z_dla, map_log_nhi in zip(map_z_dlas, map_log_nhis):
                 absorption = Voigt_absorption(
                     rest_wavelengths * (1 + self.z_qsos[nspec]), 10**map_log_nhi, map_z_dla, num_lines=num_voigt_lines)
-
                 this_mu = this_mu * absorption
 
         # get parks model
@@ -1743,7 +1757,7 @@ class QSOLoader(object):
 
                 this_parks_mu = this_parks_mu * absorption
 
-        # plt.figure(figsize=(16, 5))
+        # [new_fig] False if we want to overlapping on the same figure 
         if new_fig:
             make_fig()
             plt.plot(this_rest_wavelengths, this_flux, label="observed flux; spec-{}-{}-{}".format(plate, mjd, fiber_id), color="C0")
@@ -1755,15 +1769,18 @@ class QSOLoader(object):
                 ",".join("{:.3g}".format(p) for p in  dla_confidences)), 
                 color="orange")
         if nth >= 0:
+            if not label:
+                label = r"$\mathcal{M}$"+r" DLA({n})".format(n=nth+1) + ": {:.3g}; ".format(
+                    self.model_posteriors[nspec, 1 + self.sub_dla + nth]) + "lognhi = ({})".format( ",".join("{:.3g}".format(n) for n in map_log_nhis) )
             plt.plot(rest_wavelengths, this_mu, 
-                label=label + r"$\mathcal{M}$"+r" DLA({n})".format(n=nth+1) + ": {:.3g}; ".format(
-                    self.model_posteriors[nspec, 1 + self.sub_dla + nth]) + 
-                    "lognhi = ({})".format( ",".join("{:.3g}".format(n) for n in map_log_nhis) ), 
-                color=color)
+                label=label,
+                color=color, **kwargs)
         else:
+            if not label:
+                label =  r"$\mathcal{M}$"+r" DLA({n})".format(n=0) + ": {:.3g}".format(self.p_no_dlas[nspec])
             plt.plot(rest_wavelengths, this_mu, 
-                label=label + r"$\mathcal{M}$"+r" DLA({n})".format(n=0) + ": {:.3g}".format(self.p_no_dlas[nspec]), 
-                color=color)
+                label=label, 
+                color=color, **kwargs)
 
         plt.xlabel(r"rest-wavelengths $\lambda_{\mathrm{rest}}$ $\AA$")
         plt.ylabel(r"normalised flux")
